@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Abfahrten">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<title>Abfahrten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --panel: #05080c;
+    --frame: #1b2530;
+    --head: #10202e;
+    --rule: #16212b;
+    --text: #f4f6f8;
+    --amber: #ffb000;
+    --dim: #7d8b97;
+    --late: #ff6a4d;
+    --font: "Barlow Semi Condensed", "Arial Narrow", system-ui, -apple-system, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { background: #000; }
+  body {
+    margin: 0;
+    background: #000;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 18px;
+    line-height: 1.15;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 10px 10px 28px; }
+
+  /* Tafel */
+  .board {
+    background: var(--panel);
+    border: 3px solid var(--frame);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--head);
+    border-bottom: 2px solid var(--frame);
+  }
+  .topbar .title { font-size: 1.25rem; font-weight: 700; letter-spacing: .02em; }
+  #clock { font-size: 1.9rem; font-weight: 700; color: var(--amber); font-variant-numeric: tabular-nums; line-height: 1; }
+
+  .cols, .row {
+    display: grid;
+    grid-template-columns: 3.4rem minmax(0, 1fr) 3.6rem 3.5rem;
+    column-gap: 8px;
+    align-items: center;
+    padding: 0 14px;
+  }
+  .cols {
+    padding-top: 8px;
+    padding-bottom: 6px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--dim);
+    border-bottom: 1px solid var(--frame);
+  }
+  .cols .t, .row .t { text-align: right; }
+
+  .row {
+    min-height: 3.6rem;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--rule);
+    color: var(--amber);
+    font-weight: 600;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row.gone { opacity: .55; }
+
+  .badge {
+    display: grid;
+    place-items: center;
+    min-width: 2.9rem;
+    height: 2.2rem;
+    padding: 0 .3rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0a0a0a;
+    background: var(--amber);
+    border-radius: 4px;
+  }
+  .badge.bus { background: var(--text); border-radius: 999px; }
+
+  .dest { font-size: 1.4rem; font-weight: 600; letter-spacing: .01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row.gone .dest { text-decoration: line-through; }
+
+  .clock-col { text-align: right; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+  .clock-col .plus { display: block; font-size: .8rem; font-weight: 700; color: var(--late); margin-top: 1px; }
+  .clock-col.late { color: var(--late); }
+  .clock-col.sched { opacity: .75; }
+
+  .mins { text-align: right; font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mins.now { font-size: 1.15rem; }
+  .mins.cancel { font-size: .85rem; color: var(--late); line-height: 1.05; }
+
+  .msg { padding: 14px; font-size: 1rem; font-weight: 500; color: var(--dim); }
+  .msg.error { color: var(--late); }
+
+  footer { margin: 12px 4px 0; font-size: .85rem; color: var(--dim); }
+  footer.error #status { color: var(--late); }
+  footer a { color: var(--dim); text-decoration: underline; }
+  .src { margin-top: 4px; }
+
+  @media (max-width: 360px) {
+    .cols, .row { grid-template-columns: 3rem minmax(0, 1fr) 3.2rem 3.1rem; column-gap: 6px; padding: 0 10px; }
+    .dest { font-size: 1.2rem; }
+    .mins { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="board">
+    <div class="topbar">
+      <div class="title">Abfahrten</div>
+      <div id="clock" aria-label="Aktuelle Uhrzeit">--:--</div>
+    </div>
+    <div class="cols" aria-hidden="true">
+      <div>Linie</div><div>Ziel</div><div class="t">Zeit</div><div class="t">Min</div>
+    </div>
+    <div id="rows" aria-live="polite"></div>
+  </div>
+  <footer id="foot">
+    <div id="status">Lade Abfahrten …</div>
+    <div class="src">Daten: <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous</a> und die Verkehrsunternehmen</div>
+  </footer>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   Einstellungen
+   - queries: Suchbegriffe für die Haltestelle (werden nacheinander probiert)
+   - match:   Teil des Namens, an dem die richtige Haltestelle erkannt wird
+   - lines:   nur diese Linien anzeigen (leer = alle)
+   - ids:     optional feste Haltestellen-IDs, dann entfällt die Suche
+---------------------------------------------------------------- */
+const API = 'https://api.transitous.org/api';
+const REFRESH_MS = 60000;      // Daten jede Minute neu laden
+const PER_DIRECTION = 3;       // so viele Abfahrten pro Linie und Richtung
+const MAX_ROWS = 14;           // so viele Zeilen insgesamt
+
+const STOPS = [
+  { title: 'Liebigstraße',  queries: ['Köln Liebigstr.',  'Liebigstraße Köln'],  match: 'liebig',  lines: ['5'] },
+  { title: 'Schadowstraße', queries: ['Köln Schadowstr.', 'Schadowstraße Köln'], match: 'schadow', lines: ['142'] }
+];
+
+/* --------------------------------------------------------------- */
+const KOELN = { lat: 50.94, lon: 6.96 };
+const nearKoeln = m => {
+  const dLat = (m.lat - KOELN.lat) * 111;
+  const dLon = (m.lon - KOELN.lon) * 111 * Math.cos(KOELN.lat * Math.PI / 180);
+  return Math.hypot(dLat, dLon) < 25;
+};
+
+const state = STOPS.map(() => ({ departures: null, updated: null, error: null, unfiltered: false }));
+const rowsEl = document.getElementById('rows');
+const footEl = document.getElementById('foot');
+const statusEl = document.getElementById('status');
+const clockEl = document.getElementById('clock');
+
+const TZ = 'Europe/Berlin';
+const fmtTime = d => new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
+const fmtSec  = d => new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: TZ });
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+
+async function getJSON(url) {
+  let res;
+  try {
+    res = await fetch(url, { headers: { Accept: 'application/json' } });
+  } catch (e) {
+    throw new Error('keine Verbindung zu Transitous');
+  }
+  if (!res.ok) throw new Error('Fehler ' + res.status);
+  return res.json();
+}
+
+/* Haltestellen-IDs anhand des Namens finden (nur Treffer in Köln) */
+async function resolveStops(s) {
+  if (s.ids && s.ids.length) return s.ids;
+  const key = 'stops3:' + s.match;
+  try {
+    const c = JSON.parse(localStorage.getItem(key) || 'null');
+    if (Array.isArray(c) && c.length) return c;
+  } catch (e) {}
+  let ids = [];
+  for (const q of s.queries) {
+    const r = await getJSON(`${API}/v1/geocode?text=${encodeURIComponent(q)}&type=STOP&language=de`);
+    const hits = (Array.isArray(r) ? r : []).filter(m =>
+      m.type === 'STOP' && m.id && String(m.name || '').toLowerCase().includes(s.match) && nearKoeln(m));
+    ids = hits.slice(0, 3).map(m => m.id);
+    if (ids.length) break;
+  }
+  if (!ids.length) throw new Error('Haltestelle nicht gefunden');
+  try { localStorage.setItem(key, JSON.stringify(ids)); } catch (e) {}
+  return ids;
+}
+
+async function fetchStopTimes(id) {
+  const q = `stopId=${encodeURIComponent(id)}&n=50`;
+  let lastErr;
+  for (const v of ['v6', 'v5']) {
+    try {
+      const r = await getJSON(`${API}/${v}/stoptimes?${q}`);
+      return r.stopTimes || [];
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr;
+}
+
+/* Rohdaten in ein einheitliches Format bringen */
+function normalize(st) {
+  const p = st.place || {};
+  const planned = p.scheduledDeparture || p.departure;
+  if (!planned) return null;
+  const actual = p.departure || planned;
+  let line = String(st.routeShortName || '').trim();
+  if (!line) line = String(st.displayName || '').trim().split(/\s+/).pop();
+  const dest = String(st.headsign || (st.tripTo && st.tripTo.name) || '')
+    .replace(/^Köln[\s,]+/i, '').trim() || 'Ziel unbekannt';
+  return {
+    line,
+    dir: dest,
+    bus: /BUS/i.test(st.mode || ''),
+    plannedWhen: planned,
+    when: actual,
+    delay: (Date.parse(actual) - Date.parse(planned)) / 1000,
+    cancelled: !!(st.cancelled || st.tripCancelled),
+    realTime: !!st.realTime,
+    tripId: st.tripId || ''
+  };
+}
+
+async function loadStop(i) {
+  const s = STOPS[i];
+  try {
+    const ids = await resolveStops(s);
+    const results = await Promise.allSettled(ids.map(fetchStopTimes));
+    const ok = results.filter(r => r.status === 'fulfilled');
+    if (!ok.length) {
+      if (!(s.ids && s.ids.length)) { try { localStorage.removeItem('stops3:' + s.match); } catch (e) {} }
+      throw results[0].reason;
+    }
+    const seen = new Set();
+    let deps = [];
+    ok.forEach(r => r.value.forEach(st => {
+      const d = normalize(st);
+      if (!d) return;
+      const k = d.tripId + '|' + d.plannedWhen + '|' + d.line;
+      if (seen.has(k)) return;
+      seen.add(k);
+      deps.push(d);
+    }));
+    let unfiltered = false;
+    if (s.lines && s.lines.length) {
+      const filtered = deps.filter(d => s.lines.includes(d.line));
+      if (filtered.length) deps = filtered; else if (deps.length) unfiltered = true;
+    }
+    state[i] = { departures: deps, updated: Date.now(), error: null, unfiltered };
+  } catch (e) {
+    state[i].error = e.message || 'Fehler';
+  }
+}
+
+async function loadAll() {
+  await Promise.all(STOPS.map((_, i) => loadStop(i)));
+  render();
+}
+
+const timeOf = d => Date.parse(d.cancelled ? d.plannedWhen : d.when);
+const delayMin = d => Math.round((d.delay || 0) / 60);
+const minsUntil = (d, now) => Math.ceil((timeOf(d) - now) / 60000);
+
+/* Alle Haltestellen zu einer Liste zusammenführen:
+   pro Haltestelle, Linie und Richtung die nächsten Abfahrten, danach nach Zeit sortiert */
+function mergedRows(now) {
+  const perGroup = new Map();
+  state.forEach((st, i) => {
+    (st.departures || []).forEach(d => {
+      if (timeOf(d) <= now - 30000) return;
+      const key = i + '|' + d.line + '|' + d.dir;
+      if (!perGroup.has(key)) perGroup.set(key, []);
+      perGroup.get(key).push(d);
+    });
+  });
+  let all = [];
+  perGroup.forEach(list => {
+    list.sort((a, b) => timeOf(a) - timeOf(b));
+    all = all.concat(list.slice(0, PER_DIRECTION));
+  });
+  all.sort((a, b) => timeOf(a) - timeOf(b));
+  return all.slice(0, MAX_ROWS);
+}
+
+function renderRow(d, now) {
+  const gone = d.cancelled;
+  const row = el('div', 'row' + (gone ? ' gone' : ''));
+  row.appendChild(el('div', 'badge' + (d.bus ? ' bus' : ''), d.line));
+  row.appendChild(el('div', 'dest', d.dir));
+
+  const late = gone ? 0 : delayMin(d);
+  const cls = 'clock-col t' + (late >= 1 ? ' late' : '') + (!d.realTime && !gone ? ' sched' : '');
+  const tc = el('div', cls, fmtTime(gone ? d.plannedWhen : d.when));
+  if (late >= 1) tc.appendChild(el('span', 'plus', '+' + late));
+  row.appendChild(tc);
+
+  const mins = el('div', 't mins');
+  if (gone) {
+    mins.className = 't mins cancel';
+    mins.textContent = 'fällt aus';
+  } else {
+    const m = minsUntil(d, now);
+    if (m <= 0) { mins.className = 't mins now'; mins.textContent = 'jetzt'; }
+    else mins.textContent = String(m);
+  }
+  row.appendChild(mins);
+  return row;
+}
+
+function render() {
+  const now = Date.now();
+  rowsEl.replaceChildren();
+
+  const rows = mergedRows(now);
+  const loaded = state.some(st => st.departures);
+  const errors = [];
+  let latest = 0;
+
+  state.forEach((st, i) => {
+    if (st.updated) latest = Math.max(latest, st.updated);
+    if (st.error) errors.push(STOPS[i].title + ': ' + st.error);
+    if (st.unfiltered) errors.push('Linie ' + STOPS[i].lines.join(', ') + ' nicht gefunden');
+  });
+
+  if (rows.length) {
+    rows.forEach(d => rowsEl.appendChild(renderRow(d, now)));
+  } else if (loaded) {
+    rowsEl.appendChild(el('div', 'msg', 'Keine Abfahrten in nächster Zeit.'));
+  } else if (errors.length) {
+    rowsEl.appendChild(el('div', 'msg error', 'Abfahrten konnten nicht geladen werden.'));
+  } else {
+    rowsEl.appendChild(el('div', 'msg', 'Lade Abfahrten …'));
+  }
+
+  footEl.className = errors.length ? 'error' : '';
+  if (errors.length) {
+    statusEl.textContent = errors.join(' · ') + (latest ? ' · letzte Daten von ' + fmtTime(latest) + ' Uhr' : '');
+  } else if (latest) {
+    const live = rows.filter(d => d.realTime && !d.cancelled).length;
+    const total = rows.filter(d => !d.cancelled).length;
+    statusEl.textContent = 'Stand ' + fmtSec(latest) + ' · Echtzeit bei ' + live + ' von ' + total +
+      ' Abfahrten (die übrigen zeigen den Fahrplan)';
+  } else {
+    statusEl.textContent = 'Lade Abfahrten …';
+  }
+}
+
+let tick = 0;
+setInterval(() => {
+  clockEl.textContent = fmtTime(Date.now());
+  if (++tick % 5 === 0) render();
+}, 1000);
+clockEl.textContent = fmtTime(Date.now());
+
+setInterval(() => { if (!document.hidden) loadAll(); }, REFRESH_MS);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) loadAll(); });
+
+render();
+loadAll();
+</script>
+</body>
+</html>
