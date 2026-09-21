@@ -7,81 +7,100 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Abfahrten">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#100d1c">
 <meta name="color-scheme" content="dark">
 <title>Abfahrten</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --panel: #05080c;
-    --frame: #1b2530;
-    --head: #10202e;
-    --rule: #16212b;
-    --text: #f4f6f8;
-    --amber: #ffb000;
-    --dim: #7d8b97;
-    --late: #ff6a4d;
-    --font: "Barlow Semi Condensed", "Arial Narrow", system-ui, -apple-system, sans-serif;
+    --bg: #100d1c;
+    --panel: rgba(24, 20, 44, .86);
+    --line: rgba(255, 255, 255, .09);
+    --text: #f3eefc;
+    --dim: #a097c7;
+    --pink: #ff6fae;
+    --mint: #5ff2b0;
+    --blue: #6aa8ff;
+    --late: #ff8a65;
+    --font: "Bricolage Grotesque", "Avenir Next", system-ui, -apple-system, sans-serif;
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   *, *::before, *::after { box-sizing: inherit; }
-  html { background: #000; }
+  html {
+    background:
+      radial-gradient(70% 38% at 100% 0%, rgba(255, 111, 174, .26), transparent 70%),
+      radial-gradient(60% 34% at 0% 88%, rgba(95, 242, 176, .14), transparent 70%),
+      var(--bg);
+  }
   body {
     margin: 0;
-    background: #000;
+    min-height: 100vh;
     color: var(--text);
     font-family: var(--font);
     font-size: 18px;
     line-height: 1.15;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 10px 10px 28px; }
+
+  /* abstrakter Hintergrund aus Formen */
+  .art { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  .wrap { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 16px 14px 32px; }
 
   /* Tafel */
   .board {
     background: var(--panel);
-    border: 3px solid var(--frame);
-    border-radius: 10px;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 18px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
     overflow: hidden;
   }
   .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 14px;
-    background: var(--head);
-    border-bottom: 2px solid var(--frame);
+    padding: 14px 16px 12px;
+    border-top: 4px solid transparent;
+    border-image: linear-gradient(90deg, var(--pink), var(--mint), var(--blue)) 1;
+    border-bottom: 1px solid var(--line);
   }
-  .topbar .title { font-size: 1.25rem; font-weight: 700; letter-spacing: .02em; }
-  #clock { font-size: 1.9rem; font-weight: 700; color: var(--amber); font-variant-numeric: tabular-nums; line-height: 1; }
+  .topbar .title { font-size: 1.45rem; font-weight: 800; letter-spacing: -.01em; }
+  #clock {
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--mint);
+    font-variant-numeric: tabular-nums;
+  }
 
   .cols, .row {
     display: grid;
-    grid-template-columns: 3.4rem minmax(0, 1fr) 3.6rem 3.5rem;
+    grid-template-columns: 3.1rem minmax(0, 1fr) 3.4rem 3.2rem;
     column-gap: 8px;
     align-items: center;
-    padding: 0 14px;
+    padding: 0 16px;
   }
   .cols {
-    padding-top: 8px;
-    padding-bottom: 6px;
-    font-size: .85rem;
+    padding-top: 9px;
+    padding-bottom: 7px;
+    font-size: .82rem;
     font-weight: 600;
     color: var(--dim);
-    border-bottom: 1px solid var(--frame);
+    border-bottom: 1px solid var(--line);
   }
   .cols .t, .row .t { text-align: right; }
 
   .row {
-    min-height: 3.6rem;
-    padding-top: 7px;
-    padding-bottom: 7px;
-    border-bottom: 1px solid var(--rule);
-    color: var(--amber);
+    min-height: 3.8rem;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
     font-weight: 600;
   }
   .row:last-child { border-bottom: 0; }
@@ -90,45 +109,95 @@
   .badge {
     display: grid;
     place-items: center;
-    min-width: 2.9rem;
+    min-width: 2.8rem;
     height: 2.2rem;
     padding: 0 .3rem;
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #0a0a0a;
-    background: var(--amber);
-    border-radius: 4px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #0d0a18;
+    background: var(--mint);
+    border-radius: 8px;
   }
-  .badge.bus { background: var(--text); border-radius: 999px; }
+  .badge.bus { background: var(--pink); border-radius: 999px; }
 
-  .dest { font-size: 1.4rem; font-weight: 600; letter-spacing: .01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dest {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -.005em;
+  }
   .row.gone .dest { text-decoration: line-through; }
 
-  .clock-col { text-align: right; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+  .clock-col { text-align: right; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
   .clock-col .plus { display: block; font-size: .8rem; font-weight: 700; color: var(--late); margin-top: 1px; }
   .clock-col.late { color: var(--late); }
-  .clock-col.sched { opacity: .75; }
+  .clock-col.sched { color: var(--dim); font-weight: 500; }
 
-  .mins { text-align: right; font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .mins.now { font-size: 1.15rem; }
-  .mins.cancel { font-size: .85rem; color: var(--late); line-height: 1.05; }
+  .mins { text-align: right; font-size: 1.8rem; font-weight: 800; color: var(--pink); font-variant-numeric: tabular-nums; }
+  .mins.now { font-size: 1.1rem; color: var(--mint); }
+  .mins.cancel { font-size: .8rem; color: var(--late); line-height: 1.05; }
 
-  .msg { padding: 14px; font-size: 1rem; font-weight: 500; color: var(--dim); }
+  .msg { padding: 16px; font-size: 1rem; font-weight: 500; color: var(--dim); }
   .msg.error { color: var(--late); }
 
-  footer { margin: 12px 4px 0; font-size: .85rem; color: var(--dim); }
-  footer.error #status { color: var(--late); }
+  footer { margin: 16px 6px 0; font-size: .85rem; color: var(--dim); }
+  footer.error #status { color: var(--late); font-weight: 600; }
   footer a { color: var(--dim); text-decoration: underline; }
-  .src { margin-top: 4px; }
+  .src { margin-top: 5px; }
 
   @media (max-width: 360px) {
-    .cols, .row { grid-template-columns: 3rem minmax(0, 1fr) 3.2rem 3.1rem; column-gap: 6px; padding: 0 10px; }
-    .dest { font-size: 1.2rem; }
-    .mins { font-size: 1.5rem; }
+    .cols, .row { grid-template-columns: 2.8rem minmax(0, 1fr) 3.1rem 3rem; column-gap: 6px; padding: 0 12px; }
+    .dest { font-size: 1.1rem; }
+    .mins { font-size: 1.55rem; }
   }
 </style>
 </head>
 <body>
+<svg class="art" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.4" fill="#ffffff" fill-opacity=".22"/>
+    </pattern>
+  </defs>
+  <!-- Ringe oben rechts -->
+  <circle cx="352" cy="96" r="150" fill="none" stroke="#ff6fae" stroke-opacity=".34" stroke-width="1.5"/>
+  <circle cx="352" cy="96" r="104" fill="none" stroke="#ff6fae" stroke-opacity=".20" stroke-width="1.5"/>
+  <circle cx="352" cy="96" r="58" fill="#ff6fae" fill-opacity=".10"/>
+  <!-- große Flächen unten -->
+  <circle cx="24" cy="708" r="176" fill="#5ff2b0" fill-opacity=".09"/>
+  <path d="M400 520a150 150 0 0 0-150 150 150 150 0 0 0 150 150z" fill="#6aa8ff" fill-opacity=".12"/>
+  <!-- Punktraster -->
+  <rect x="26" y="452" width="176" height="154" fill="url(#dots)"/>
+  <rect x="236" y="26" width="120" height="66" fill="url(#dots)"/>
+  <!-- diagonale Linien -->
+  <g stroke="#ffffff" stroke-opacity=".07" stroke-width="1.2">
+    <line x1="-20" y1="330" x2="180" y2="130"/>
+    <line x1="-20" y1="370" x2="220" y2="130"/>
+    <line x1="-20" y1="410" x2="260" y2="130"/>
+    <line x1="260" y1="800" x2="440" y2="620"/>
+    <line x1="220" y1="800" x2="440" y2="580"/>
+  </g>
+  <!-- kleine Kreuze -->
+  <g stroke="#5ff2b0" stroke-opacity=".7" stroke-width="2" stroke-linecap="round">
+    <path d="M60 180h14M67 173v14"/>
+    <path d="M330 402h14M337 395v14"/>
+    <path d="M150 742h14M157 735v14"/>
+  </g>
+  <g stroke="#ff6fae" stroke-opacity=".7" stroke-width="2" stroke-linecap="round">
+    <path d="M24 470h14M31 463v14"/>
+    <path d="M304 668h14M311 661v14"/>
+  </g>
+  <!-- kleine Ringe -->
+  <circle cx="108" cy="28" r="7" fill="none" stroke="#6aa8ff" stroke-opacity=".7" stroke-width="2"/>
+  <circle cx="376" cy="316" r="9" fill="none" stroke="#5ff2b0" stroke-opacity=".5" stroke-width="2"/>
+  <circle cx="196" cy="770" r="6" fill="#ff6fae" fill-opacity=".6"/>
+</svg>
+
 <div class="wrap">
   <div class="board">
     <div class="topbar">
@@ -140,6 +209,7 @@
     </div>
     <div id="rows" aria-live="polite"></div>
   </div>
+
   <footer id="foot">
     <div id="status">Lade Abfahrten …</div>
     <div class="src">Daten: <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous</a> und die Verkehrsunternehmen</div>
